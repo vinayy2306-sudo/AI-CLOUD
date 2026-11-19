@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Detection results | CloudVision</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark" aria-hidden="true">CV</span><span>Cloud<span class="brand-accent">Vision</span></span></a>
+    <a class="back-link" href="{{ url_for('index') }}">← Dashboard</a>
+  </header>
+  <main class="page-shell results-shell">
+    {% if detection %}
+    <section class="welcome-row">
+      <div><p class="eyebrow">DETECTION REPORT</p><h1>Results are ready.</h1><p class="muted">{{ detection.original_filename }} · {{ detection.detected_at[:16].replace('T', ' ') }} UTC</p></div>
+      <div class="mode-pill {% if detection.mode == 'demo' %}demo-pill{% endif %}">{{ "DEMO MODE" if detection.mode == "demo" else "AWS LIVE MODE" }}</div>
+    </section>
+    {% if detection.mode == "demo" %}<div class="notice notice-demo"><strong>DEMO MODE</strong> — These are illustrative sample results, not AWS detections.</div>{% endif %}
+    <section class="results-grid">
+      <article class="panel result-image-panel">
+        <div class="section-heading"><div><p class="eyebrow">ANALYZED IMAGE</p><h2>Image</h2></div></div>
+        <img class="result-image" src="{{ detection.image_url }}" alt="Analyzed image">
+      </article>
+      <article class="panel result-label-panel">
+        <div class="section-heading">
+          <div><p class="eyebrow">OBJECTS FOUND</p><h2>Detection details</h2></div>
+          <span class="result-total">{{ detection.object_count }} objects</span>
+        </div>
+        {% if detection.labels %}
+        <div class="label-list">
+          {% for label in detection.labels %}
+          <div class="label-row">
+            <div class="label-topline"><strong>{{ label.name }}</strong><span>{{ "%.1f"|format(label.confidence) }}%</span></div>
+            <div class="confidence-track"><span style="width: {{ [label.confidence, 100]|min }}%"></span></div>
+            {% if label.instances_count %}<small>{{ label.instances_count }} instance{{ "" if label.instances_count == 1 else "s" }}</small>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="history-empty"><p>No objects were returned at the configured confidence threshold.</p></div>
+        {% endif %}
+        {% if detection.s3 %}
+        <div class="s3-info"><strong>Private S3 storage</strong><small>{{ detection.s3.bucket }}/{{ detection.s3.image_key }}<br>{{ detection.s3.report_key }}</small></div>
+        {% endif %}
+      </article>
+    </section>
+    <div class="results-actions"><a class="button button-primary" href="{{ url_for('index') }}">Analyze another image <span aria-hidden="true">→</span></a></div>
+    {% else %}
+    <section class="panel not-found"><p class="eyebrow">REPORT UNAVAILABLE</p><h1>We couldn't find that detection.</h1><p class="muted">Recent detections are kept for this application session.</p><a class="button button-primary" href="{{ url_for('index') }}">Return to dashboard</a></section>
+    {% endif %}
+  </main>
+</body>
+</html>
